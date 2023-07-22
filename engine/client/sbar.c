@@ -43,6 +43,7 @@ static cvar_t scr_scoreboard_showruleset = CVAR("scr_scoreboard_showruleset", "1
 static cvar_t scr_scoreboard_afk = CVARD("scr_scoreboard_afk", "1", "Show 'afk' in the packetloss column when they're afk.");
 static cvar_t scr_scoreboard_ping_status = CVARD("scr_scoreboard_ping_status", "25 50 100 150", "Threshholds required to switch ping display from green to white, yellow, megenta and red.");
 static cvar_t sbar_teamstatus = CVARD("sbar_teamstatus", "1", "Display the last team say from each of your team members just above the sbar area.");
+static cvar_t sbar_digits = CVARD("sbar_digits", "3", "sets the statusbar capacity for ammo, health and armor" );//alex3474247
 
 static cvar_t cl_sbaralpha = CVARAFD("cl_sbaralpha", "0.75", "scr_sbaralpha", CVAR_ARCHIVE, "Specifies the transparency of the status bar. Only Takes effect when cl_sbar is set to 2.");	//with premultiplied alpha, this needs to affect the RGB values too.
 
@@ -1174,7 +1175,8 @@ void Sbar_Init (void)
 	Cvar_Register(&scr_scoreboard_teamscores, "Scoreboard settings");
 	Cvar_Register(&scr_scoreboard_teamsort, "Scoreboard settings");
 	Cvar_Register(&scr_scoreboard_titleseperator, "Scoreboard settings");
-
+	Cvar_Register(&sbar_digits,"sbar digit count");//alex3474247
+	
 	Cvar_Register(&sbar_teamstatus, "Status bar settings");
 	Cvar_Register(&cl_sbaralpha, "Status bar settings");
 
@@ -2282,8 +2284,16 @@ void Sbar_DrawNormal (playerview_t *pv)
 	{
 		if (sbar_rogue)
 		{
-			Sbar_DrawNum (24, 0, pv->stats[STAT_ARMOR], 3,
-				pv->stats[STAT_ARMOR] <= 25);
+			if (sbar_digits.ival != 3)
+			{
+				Sbar_DrawNum (24, 0, pv->stats[STAT_ARMOR], sbar_digits.ival,
+					pv->stats[STAT_ARMOR] <= 25);
+			}
+			else
+			{
+				Sbar_DrawNum (24, 0, pv->stats[STAT_ARMOR], 3,
+					pv->stats[STAT_ARMOR] <= 25);
+			}
 			if (pv->stats[STAT_ITEMS] & RIT_ARMOR3)
 				Sbar_DrawPic (0, 0, 24, 24, sb_armor[2]);
 			else if (pv->stats[STAT_ITEMS] & RIT_ARMOR2)
@@ -2293,8 +2303,16 @@ void Sbar_DrawNormal (playerview_t *pv)
 		}
 		else
 		{
-			Sbar_DrawNum (24, 0, pv->stats[STAT_ARMOR], 3,
-				pv->stats[STAT_ARMOR] <= 25);
+			if (sbar_digits.ival != 3)
+			{
+				Sbar_DrawNum (24, 0, pv->stats[STAT_ARMOR], sbar_digits.ival,
+					pv->stats[STAT_ARMOR] <= 25);
+			}
+			else
+			{
+				Sbar_DrawNum (24, 0, pv->stats[STAT_ARMOR], 3,
+					pv->stats[STAT_ARMOR] <= 25);
+			}
 			if (pv->stats[STAT_ITEMS] & IT_ARMOR3)
 				Sbar_DrawPic (0, 0, 24, 24, sb_armor[2]);
 			else if (pv->stats[STAT_ITEMS] & IT_ARMOR2)
@@ -2308,8 +2326,16 @@ void Sbar_DrawNormal (playerview_t *pv)
 	Sbar_DrawFace (pv);
 
 // health
-	Sbar_DrawNum (136, 0, pv->stats[STAT_HEALTH], 3
-	, pv->stats[STAT_HEALTH] <= 25);
+	if (sbar_digits.ival != 3)
+	{
+		Sbar_DrawNum (136, 0, pv->stats[STAT_HEALTH], sbar_digits.ival
+		, pv->stats[STAT_HEALTH] <= 25);
+	}
+	else
+	{
+		Sbar_DrawNum (136, 0, pv->stats[STAT_HEALTH], 3
+		, pv->stats[STAT_HEALTH] <= 25);
+	}
 
 // ammo icon
 	if (sbar_rogue)
@@ -2340,9 +2366,17 @@ void Sbar_DrawNormal (playerview_t *pv)
 		else if (pv->stats[STAT_ITEMS] & IT_CELLS)
 			Sbar_DrawPic (224, 0, 24, 24, sb_ammo[3]);
 	}
-
-	Sbar_DrawNum (248, 0, pv->stats[STAT_AMMO], 3
-	, pv->stats[STAT_AMMO] <= 10);
+	
+	if (sbar_digits.ival != 3)
+	{
+		Sbar_DrawNum (248, 0, pv->stats[STAT_AMMO], sbar_digits.ival
+		, pv->stats[STAT_AMMO] <= 10);
+	}
+	else
+	{
+		Sbar_DrawNum (248, 0, pv->stats[STAT_AMMO], 3
+		, pv->stats[STAT_AMMO] <= 10);
+	}
 }
 
 qboolean Sbar_ShouldDraw (playerview_t *pv)
@@ -2656,7 +2690,19 @@ static void Sbar_Hexen2DrawBasic(playerview_t *pv)
 	maxval = pv->stats[STAT_H2_MAXMANA];
 	val = pv->stats[STAT_H2_BLUEMANA];
 	val = bound(0, val, maxval);
-	Sbar_DrawTinyStringf(201, 22, "%03d", val);
+	
+	if (sbar_digits.ival == 3)
+	{
+		Sbar_DrawTinyStringf(201, 22, "%03d", val);
+	}
+	else if (sbar_digits.ival == 4)
+	{
+		Sbar_DrawTinyStringf(201, 22, "%04d", val);
+	}
+	else
+	{
+		Sbar_DrawTinyStringf(201, 22, "%05d", val);
+	}
 	if(val)
 	{
 		Sbar_DrawMPic(190, 26-(int)((val*18.0)/(float)maxval+0.5), 3, 19, R2D_SafeCachePic("gfx/bmana.lmp"));
@@ -2667,7 +2713,20 @@ static void Sbar_Hexen2DrawBasic(playerview_t *pv)
 	maxval = pv->stats[STAT_H2_MAXMANA];
 	val = pv->stats[STAT_H2_GREENMANA];
 	val = bound(0, val, maxval);
-	Sbar_DrawTinyStringf(243, 22, "%03d", val);
+	
+	if (sbar_digits.ival == 3)
+	{
+		Sbar_DrawTinyStringf(243, 22, "%03d", val);
+	}
+	else if (sbar_digits.ival == 4)
+	{
+		Sbar_DrawTinyStringf(243, 22, "%04d", val);
+	}
+	else
+	{
+		Sbar_DrawTinyStringf(243, 22, "%05d", val);
+	}
+	
 	if(val)
 	{
 		Sbar_DrawMPic(232, 26-(int)((val*18.0)/(float)maxval+0.5), 3, 19, R2D_SafeCachePic("gfx/gmana.lmp"));
@@ -2679,12 +2738,26 @@ static void Sbar_Hexen2DrawBasic(playerview_t *pv)
 	val = pv->stats[STAT_HEALTH];
 	if (val < -99)
 		val = -99;
-	Sbar_Hexen2DrawNum(58, 14, val, 3);
+	
+	if (sbar_digits.ival != 3)
+	{
+		Sbar_Hexen2DrawNum(58, 14, val, sbar_digits.ival);
+	}
+	else
+	{
+		Sbar_Hexen2DrawNum(58, 14, val, 3);
+	}
 
 	//armour
 	val = Sbar_Hexen2ArmourValue(pv);
-	Sbar_Hexen2DrawNum(105, 14, val, 2);
-
+	if (sbar_digits.ival != 3)
+	{
+		Sbar_Hexen2DrawNum(105, 14, val, sbar_digits.ival-1);
+	}
+	else
+	{
+		Sbar_Hexen2DrawNum(105, 14, val, 2);
+	}
 //	SetChainPosition(cl.v.health, cl.v.max_health);
 	chainpos = (195.0f*pv->stats[STAT_HEALTH]) / pv->stats[STAT_H2_MAXHEALTH];
 	if (chainpos < 0)
@@ -2704,11 +2777,30 @@ static void Sbar_Hexen2DrawMinimal(playerview_t *pv)
 	y = -16;
 	Sbar_DrawMPic(3, y, 31, 17, R2D_SafeCachePic("gfx/bmmana.lmp"));
 	Sbar_DrawMPic(3, y+18, 31, 17, R2D_SafeCachePic("gfx/gmmana.lmp"));
-
-	Sbar_DrawTinyStringf(10, y+6, "%03d", pv->stats[STAT_H2_BLUEMANA]);
-	Sbar_DrawTinyStringf(10, y+18+6, "%03d", pv->stats[STAT_H2_GREENMANA]);
-
-	Sbar_Hexen2DrawNum(38, y+18, pv->stats[STAT_HEALTH], 3);
+	
+	if (sbar_digits.ival == 3)
+	{
+		Sbar_DrawTinyStringf(10, y + 6, "%03d", pv->stats[STAT_H2_BLUEMANA]);
+		Sbar_DrawTinyStringf(10, y + 18 + 6, "%03d", pv->stats[STAT_H2_GREENMANA]);
+	}
+	else if (sbar_digits.ival == 4)
+	{
+		Sbar_DrawTinyStringf(10, y + 6, "%04d", pv->stats[STAT_H2_BLUEMANA]);
+		Sbar_DrawTinyStringf(10, y + 18 + 6, "%04d", pv->stats[STAT_H2_GREENMANA]);
+	}
+	else
+	{
+		Sbar_DrawTinyStringf(10, y + 6, "%05d", pv->stats[STAT_H2_BLUEMANA]);
+		Sbar_DrawTinyStringf(10, y + 18 + 6, "%05d", pv->stats[STAT_H2_GREENMANA]);
+	}
+	if (sbar_digits.ival != 3)
+	{
+		Sbar_Hexen2DrawNum(38, y + 18, pv->stats[STAT_HEALTH], sbar_digits.ival);
+	}
+	else
+	{
+		Sbar_Hexen2DrawNum(38, y + 18, pv->stats[STAT_HEALTH], 3);
+	}
 }
 #endif
 
